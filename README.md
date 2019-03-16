@@ -29,10 +29,9 @@ Put your signed packages into the `PKGS` folder
 
 - Stop the server Ctrl+C
 - Re-run the server with `npm run start`
-- Use the first menu item `Update Package Link`
-- Navigate to the "Package Manager/LAN Package Installer/Update Package Link" and click on it
+- In your PS3 navigate to the "Package Manager/LAN Package Installer/Update Package Link" and click on it
 - Click on the `Download updated package_link` to download a temporally copy of the file
-- Click on `Rename & Reboot` rename the file & reboot system
+- Click on `Rename & Reboot` to make ps3xploit rename the file & reboot system
 
 ## Game Data
 
