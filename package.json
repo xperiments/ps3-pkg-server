@@ -1,0 +1,21 @@
+{
+  "name": "ps3-pkg-server",
+  "version": "1.0.0",
+  "description": "A small nodejs program to help with generating a package_link.xml file for transferring files between your (\\*nix) computer and your HAN enabled PlayStation3 using a network.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "import-psn": "node ./bdd/psn-db.js && npm run import-sources",
+    "import-sources": "node ./bdd/sources-db.js",
+    "postinstall": "npm run import-sources && npm run start"
+  },
+  "author": "xperiments",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.3.1",
+    "csvtojson": "^2.0.8",
+    "express": "^4.16.4",
+    "jimp": "^0.6.0",
+    "request": "^2.88.0"
+  }
+}

